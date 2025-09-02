@@ -1,0 +1,4 @@
+rootProject.name = 'Lotc-Farming-Plugin-Test'
+include("src:main:test-plugin")
+include("src:main:test-plugin:src:main:java")
+include("test_plugin")

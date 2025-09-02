@@ -1,0 +1,4 @@
+name: Lotc-Farming-Plugin-Test
+version: '1.0-SNAPSHOT'
+main: mc.lotcFarmingPluginTest.LotcFarmingPluginTest
+api-version: '1.21'
