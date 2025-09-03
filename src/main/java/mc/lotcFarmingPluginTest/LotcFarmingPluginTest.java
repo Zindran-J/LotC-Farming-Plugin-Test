@@ -1,5 +1,8 @@
 package mc.lotcFarmingPluginTest;
 
+import listeners.FarmingFunctions;
+import org.bukkit.event.HandlerList;
+import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 // TODO:
@@ -28,12 +31,15 @@ public final class LotcFarmingPluginTest extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        // Plugin startup logic
-
+        getLogger().info("Farming Plugin Loaded!");
+        // Start Listener
+        getServer().getPluginManager().registerEvents(new FarmingFunctions(), this);
     }
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
+        // Shut down plugin functions.
+        getLogger().info("Farming Plugin turned off.");
+        HandlerList.unregisterAll(this);
     }
 }
