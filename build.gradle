@@ -37,12 +37,6 @@ tasks.jar {
         attributes["paperweight-mappings-namespace"] = "spigot"
     }
 }
-// if you have shadowJar configured
-tasks.shadowJar {
-    manifest {
-        attributes["paperweight-mappings-namespace"] = "spigot"
-    }
-}
 
 def targetJavaVersion = 21
 java {
