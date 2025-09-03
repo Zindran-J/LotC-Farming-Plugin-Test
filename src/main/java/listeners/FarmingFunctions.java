@@ -1,7 +1,5 @@
 package listeners;
 
-import mc.lotcFarmingPluginTest.LotcFarmingPluginTest;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
@@ -12,17 +10,18 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
+import scheduleHandler.handler;
 
+//TODO:
+// Update the "Harvest" function to do some extra looking into Cactus and Sugarcane to prevent an infinite glitch.
+// For Sugarcane and Cactus, make sure to also check the NBT of the block to make sure the block was NOT placed
+//  by a player. If placed by player, only give 1 block in return. This will be the origin tag.
 
 public class FarmingFunctions implements Listener{
     // Make a 'Harvest' function that activates when right-clicking a crop
     // When right-clicking the crop, check to see what item the player is holding and pass it and the crop
     //   to the 'Harvestable' function.
     // If the 'Harvestable' function returns FALSE, do nothing. Else, complete harvestActivity function.
-    LotcFarmingPluginTest plugin;
-    public FarmingFunctions(LotcFarmingPluginTest plugin) {
-        this.plugin = plugin;
-    }
 
     @EventHandler
     public void harvestActivity(PlayerInteractEvent e) {
@@ -63,11 +62,7 @@ public class FarmingFunctions implements Listener{
                  Material.COCOA:
                 if (isHoe && isMature) {
                     clickedBlock.breakNaturally();
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        Block replantLocation = clickedBlock.getLocation().getBlock();
-                        replantLocation.setType(newCropType, false);
-                        replantLocation.setBlockData(newCrop);
-                    });
+                    handler.placeBlock(clickedBlock, newCrop);
                 } else {
                     break;
                 }
