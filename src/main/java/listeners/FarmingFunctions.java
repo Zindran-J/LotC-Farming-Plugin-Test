@@ -1,6 +1,11 @@
 package listeners;
 
+import mc.lotcFarmingPluginTest.LotcFarmingPluginTest;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.data.Ageable;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
@@ -8,36 +13,72 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
+
 public class FarmingFunctions implements Listener{
     // Make a 'Harvest' function that activates when right-clicking a crop
     // When right-clicking the crop, check to see what item the player is holding and pass it and the crop
     //   to the 'Harvestable' function.
-    // If the 'Harvestable' function returns FALSE, do nothing. Else, complete HarvestActivity function.
+    // If the 'Harvestable' function returns FALSE, do nothing. Else, complete harvestActivity function.
+    LotcFarmingPluginTest plugin;
+    public FarmingFunctions(LotcFarmingPluginTest plugin) {
+        this.plugin = plugin;
+    }
+
     @EventHandler
-    public void harvest(PlayerInteractEvent e) {
-        boolean harvestable;
+    public void harvestActivity(PlayerInteractEvent e) {
         if (e.getAction() == Action.RIGHT_CLICK_BLOCK) {
             Player user = e.getPlayer(); // Get player
             // Get the block that was clicked, and what its type is.
-            Material block = e.getClickedBlock() != null ? e.getClickedBlock().getType() : null;
+            Block block = e.getClickedBlock() != null ? e.getClickedBlock() : null;
             // Get the tool that clicked on the block.
             ItemStack tool = e.getItem();
             // Check Harvestability, assuming that there is an item in hand and a block being aimed at.
+            //   If the block is harvestable, harvest it, and replant if possible.
             if (tool != null && block != null) {
-                harvestable = checkHarvestability(tool, block);
-            } else { harvestable = false; }
-            if (harvestable) {
-                e.getClickedBlock().breakNaturally();
+               if (isCrop(block)) {
+                    harvestCrop(tool, block);
+               }
             }
         }
     }
-    public boolean checkHarvestability(ItemStack item, Material crop) {
-        boolean isHoe = item.getType().name().endsWith("HOE");
-        boolean isAxe = item.getType().name().endsWith("AXE");
-        return switch (crop) {
-            case Material.CARROTS, Material.POTATOES, Material.BEETROOTS, Material.WHEAT, Material.NETHER_WART, Material.SUGAR_CANE, Material.CACTUS -> isHoe;
-            case Material.MELON, Material.PUMPKIN, Material.BAMBOO -> isAxe;
+
+    public boolean isCrop (Block block) {
+        return switch (block.getType()) {
+            case Material.CARROTS, Material.POTATOES, Material.BEETROOTS, Material.WHEAT, Material.NETHER_WART,
+                 Material.COCOA_BEANS, Material.SUGAR_CANE, Material.CACTUS, Material.MELON, Material.PUMPKIN,
+                 Material.BAMBOO -> true;
             default -> false;
         };
+    }
+
+    public void harvestCrop (ItemStack item, Block clickedBlock) {
+        boolean isHoe = item.getType().name().endsWith("_HOE");
+        boolean isAxe = item.getType().name().endsWith("_AXE");
+        Material newCropType = clickedBlock.getType();
+        BlockData newCrop = clickedBlock.getType().createBlockData();
+        if (newCrop instanceof Ageable ageable) { ageable.setAge(0); }
+        boolean isMature = ((Ageable) clickedBlock.getBlockData()).getAge() == ((Ageable) clickedBlock.getBlockData()).getMaximumAge();
+        switch (clickedBlock.getType()) {
+            case Material.CARROTS, Material.POTATOES, Material.BEETROOTS, Material.WHEAT, Material.NETHER_WART,
+                 Material.COCOA:
+                if (isHoe && isMature) {
+                    clickedBlock.breakNaturally();
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        Block replantLocation = clickedBlock.getLocation().getBlock();
+                        replantLocation.setType(newCropType, false);
+                        replantLocation.setBlockData(newCrop);
+                    });
+                } else {
+                    break;
+                }
+            case Material.SUGAR_CANE, Material.CACTUS:
+                if (isHoe) {
+                    clickedBlock.breakNaturally();
+                }
+            case Material.MELON, Material.PUMPKIN, Material.BAMBOO:
+                if (isAxe) {
+                    clickedBlock.breakNaturally();
+                }
+        }
     }
 }
