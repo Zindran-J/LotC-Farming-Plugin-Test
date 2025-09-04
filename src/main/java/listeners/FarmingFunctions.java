@@ -1,18 +1,25 @@
 package listeners;
 
 import org.bukkit.Material;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Directional;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.loot.LootContext;
 import scheduleHandler.handler;
+
+import java.util.HashMap;
+import java.util.Map;
 
 //TODO:
 // If CoreProtect is added, Update the "harvestActivity" method to do some extra looking into Cactus, Sugarcane,
@@ -20,6 +27,20 @@ import scheduleHandler.handler;
 // item/seed, regardless of enchants on the harvesting item.
 
 public class FarmingFunctions implements Listener {
+    Map<Material, Integer> toolWeights = new HashMap<>() {{
+        put (Material.WOODEN_HOE, 1);
+        put (Material.WOODEN_AXE, 1);
+        put (Material.STONE_HOE, 1);
+        put (Material.STONE_AXE, 1);
+        put (Material.IRON_HOE, 2);
+        put (Material.IRON_AXE, 2);
+        put (Material.GOLDEN_HOE, 2);
+        put (Material.GOLDEN_AXE, 2);
+        put (Material.DIAMOND_HOE, 3);
+        put (Material.DIAMOND_AXE, 3);
+        put (Material.NETHERITE_HOE, 3);
+        put (Material.NETHERITE_AXE, 3);
+    }};
     @EventHandler
     public void harvestActivity(PlayerInteractEvent e) {
         // Main method to harvest a farmable block.
@@ -32,9 +53,12 @@ public class FarmingFunctions implements Listener {
             // Check Harvestability, assuming that there is an item in hand and a block being aimed at.
             //   If the block is harvestable, harvest it, and replant if possible.
             if (tool != null && block != null) {
-               if (isCrop(block)) {
+                if (tool.getType() == Material.BONE_MEAL) {
+                    return;
+                }
+                if (isCrop(block)) {
                     harvestCrop(tool, block, user);
-               }
+                }
             }
         }
     }
@@ -52,9 +76,18 @@ public class FarmingFunctions implements Listener {
         //  reading the below code and comments.
         boolean isHoe = item.getType().name().endsWith("_HOE");
         boolean isAxe = item.getType().name().endsWith("_AXE");
+        boolean isMature = false;
+
+        // Store what the crop's type, and check for maturity.
+        Material cropType = clickedBlock.getType();
+        if (clickedBlock.getBlockData() instanceof Ageable ageable) {
+            isMature = (ageable.getAge() == ageable.getMaximumAge());
+        }
 
         // Create a new crop block. Default age = 0, so no adjustment needed.
         // If the crop is cocoa, we also need to preserve what way it faces.
+        // setAir is for when the block doesn't need to be replanted.
+        BlockData setAir = Material.AIR.createBlockData();
         BlockData newCrop;
         if (clickedBlock.getType() == Material.COCOA) {
             // Get current direction, create new crop, copy direction onto new crop.
@@ -65,39 +98,62 @@ public class FarmingFunctions implements Listener {
             newCrop = clickedBlock.getType().createBlockData();
         }
 
-        switch (clickedBlock.getType()) {
+        // Create LootContext for the player
+        // Note: Luck can sometimes be null somehow, so we need to validate it first.
+        float luck = 0.0f;
+        AttributeInstance luckAttribute = user.getAttribute(Attribute.GENERIC_LUCK);
+        if (luckAttribute != null) {
+            luck = (float)  luckAttribute.getValue();
+        }
+        LootContext playerContext = new LootContext.Builder(user.getLocation())
+                .lootedEntity(user)
+                .killer(user)
+                .luck(luck)
+                .build();
+
+        // Get the level of fortune and/or unbreaking on the player's tool.
+        // First check to see if the tool is valid, then save its weight.
+        // Of course, the weights right now are arbitrary, but this is to show it works.
+        int weights = toolWeights.get(item.getType()) == null ? 0 : toolWeights.get(item.getType());
+        int unbreakingLevel = item.getEnchantmentLevel(Enchantment.UNBREAKING);
+        int fortune = item.getEnchantmentLevel(Enchantment.FORTUNE) + weights;
+
+        // Adjust loot tables to reflect the fortune.
+        handler.adjustLootValues(fortune);
+
+        switch (cropType) {
             // Check block types for valid crops.
             case Material.CARROTS, Material.POTATOES, Material.BEETROOTS, Material.WHEAT, Material.NETHER_WART,
                  Material.COCOA:
                 // For certain crops like the ones in this case, they must be checked for maturity before harvesting.
-                if (isHoe && (((Ageable) clickedBlock.getBlockData()).getAge() == ((Ageable) clickedBlock.getBlockData()).getMaximumAge())) {
-                    clickedBlock.breakNaturally();
-                    handler.placeBlock(clickedBlock, newCrop);
-                } else {
-                    if (!isHoe) {
-                        user.sendMessage("This is the wrong tool to harvest with...");
+                if (isHoe) {
+                    if (isMature) {
+                        handler.harvestBlock(cropType, user, playerContext, clickedBlock, newCrop, item, unbreakingLevel);
                     } else {
                         user.sendMessage("This crop is not mature yet!");
                     }
-                    break;
+                } else {
+                    user.sendMessage("This is the wrong tool to harvest with...");
                 }
                 break;
 
             case Material.SUGAR_CANE, Material.CACTUS, Material.RED_MUSHROOM, Material.BROWN_MUSHROOM:
-                if (isHoe) {
-                    clickedBlock.breakNaturally();
-                } else {
+                if (!isHoe) {
                     user.sendMessage("This is the wrong tool to harvest with...");
-                    break;
+                } else {
+                    handler.harvestBlock(cropType, user, playerContext, clickedBlock, setAir, item, unbreakingLevel);
                 }
+                break;
 
             case Material.MELON, Material.PUMPKIN, Material.RED_MUSHROOM_BLOCK, Material.BROWN_MUSHROOM_BLOCK:
-                if (isAxe) {
-                    clickedBlock.breakNaturally();
-                } else {
+                if (!isAxe) {
                     user.sendMessage("This is the wrong tool to harvest with...");
-                    break;
+                } else {
+                    handler.harvestBlock(cropType, user, playerContext, clickedBlock, setAir, item, unbreakingLevel);
                 }
+                break;
         }
+        // reset the drop values after looting the block.
+        handler.adjustLootValues(0);
     }
 }

@@ -1,11 +1,18 @@
 package mc.lotcFarmingPluginTest;
 
 import listeners.FarmingFunctions;
+import lombok.Getter;
+import modifiedLootTables.blocks.*;
+import modifiedLootTables.customCropTable;
 import modifiedLootTables.defaultBreakValues;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import scheduleHandler.handler;
+import java.util.HashMap;
+import java.util.Map;
 
 //TODO:
 // - 1.0: Start adjustment on crop drop table.
@@ -27,11 +34,6 @@ import scheduleHandler.handler;
 //        - Fortune 3 = 4 crop 4 seed (6 crop sc)
 //        Note: for the calculation on seeds just use modulo 2 to get an easy full number.
 // - 2.3: For plants that are replantable, automatically reduce the number of "seeds" given by 1 prior to distribution.
-// - 2.4: The only exception to these tables I imagine is for Melons. Melons naturally give 4-6 per block, so we'll do 4
-//        naturally, and add half of the current per level, rounded down.
-//        - Fortune 1 ~ 6
-//        - Fortune 2 ~ 9
-//        - Fortune 3 ~ 13
 // - 3.0: Alter the crop break event to make it only ever drop 1 crop/seed if somehow broken by anything other than the
 //        correct tool. Such things that can do this are pistons, crop trampling, darkness, water, lava, explosions,
 //        or a piston moving the supporting block. Mob griefing should be noted to also cause explosions and trampling.
@@ -40,11 +42,48 @@ public final class LotcFarmingPluginTest extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        getLogger().info("Farming Plugin Loaded!");
+        getLogger().info("Loading Farming Plugin...");
+
+        // Initialize Tables
+        getLogger().info("Initializing Loot Tables...");
+        this.beetrootTable = new beetroots(new NamespacedKey(this, "beetroot_drops"));
+        this.brownMushroomTable = new brownMushroom(new NamespacedKey(this, "brown_mushroom_drops"));
+        this.brownMushroomBlockTable = new brownMushroomBlock(new NamespacedKey(this, "brown_mushroom_block_drops"));
+        this.redMushroomTable = new redMushroom(new NamespacedKey(this, "red_mushroom_drops"));
+        this.redMushroomBlockTable = new redMushroomBlock(new NamespacedKey(this, "red_mushroom_block_drops"));
+        this.cactusTable = new cactus(new NamespacedKey(this, "cactus_drops"));
+        this.carrotTable = new carrots(new NamespacedKey(this, "carrot_drops"));
+        this.cocoaTable = new cocoa(new NamespacedKey(this, "cocoa_drops"));
+        this.melonTable = new melon(new NamespacedKey(this, "melon_drops"));
+        this.netherwartTable = new netherwart(new NamespacedKey(this, "netherwart_drops"));
+        this.potatoTable = new potatoes(new NamespacedKey(this, "potato_drops"));
+        this.pumpkinTable = new pumpkin(new NamespacedKey(this, "pumpkin_drops"));
+        this.sugarcaneTable = new sugarcane(new NamespacedKey(this, "sugarcane_drops"));
+        this.wheatTable = new wheat(new NamespacedKey(this, "wheat_drops"));
+        this.lootTables = new HashMap<>() {{
+            put(Material.BEETROOTS, getBeetrootTable());
+            put(Material.BROWN_MUSHROOM, getBrownMushroomTable());
+            put(Material.BROWN_MUSHROOM_BLOCK, getBrownMushroomBlockTable());
+            put(Material.RED_MUSHROOM, getRedMushroomTable());
+            put(Material.RED_MUSHROOM_BLOCK, getRedMushroomBlockTable());
+            put(Material.CACTUS, getCactusTable());
+            put(Material.CARROTS, getCarrotTable());
+            put(Material.COCOA, getCocoaTable());
+            put(Material.MELON, getMelonTable());
+            put(Material.NETHER_WART, getNetherwartTable());
+            put(Material.POTATOES, getPotatoTable());
+            put(Material.PUMPKIN, getPumpkinTable());
+            put(Material.SUGAR_CANE, getSugarcaneTable());
+            put(Material.WHEAT, getWheatTable());
+        }};
+        getLogger().info("Loot Tables Initialized!");
+
         // Start Listener
         getServer().getPluginManager().registerEvents(new FarmingFunctions(), this);
         getServer().getPluginManager().registerEvents(new handler(this), (Plugin) this);
         getServer().getPluginManager().registerEvents(new defaultBreakValues(), this);
+
+        getLogger().info("Farming Plugin Loaded!");
     }
 
     @Override
@@ -53,4 +92,46 @@ public final class LotcFarmingPluginTest extends JavaPlugin {
         getLogger().info("Farming Plugin turned off.");
         HandlerList.unregisterAll(this);
     }
+
+    public customCropTable getLootTable (Material material) {
+        return lootTables.get(material);
+    }
+
+
+    // The way this should work is:
+    // 1. ####Table is initialized.
+    // 2. The Getter function is stored as a value inside a map with a material key.
+    // 3.0 To access ####Table specifically, we call getLootTable with the material key.
+    // 3.1 With that key, we call lootTables and pass the key which gives us the Getter function.
+    // 3.2 That Getter function automatically returns the requested table.
+    @Getter
+    private beetroots beetrootTable;
+    @Getter
+    private brownMushroom brownMushroomTable;
+    @Getter
+    private brownMushroomBlock brownMushroomBlockTable;
+    @Getter
+    private redMushroom redMushroomTable;
+    @Getter
+    private redMushroomBlock redMushroomBlockTable;
+    @Getter
+    private cactus cactusTable;
+    @Getter
+    private carrots carrotTable;
+    @Getter
+    private cocoa cocoaTable;
+    @Getter
+    private melon melonTable;
+    @Getter
+    private netherwart netherwartTable;
+    @Getter
+    private potatoes potatoTable;
+    @Getter
+    private pumpkin pumpkinTable;
+    @Getter
+    private sugarcane sugarcaneTable;
+    @Getter
+    private wheat wheatTable;
+    @Getter
+    private Map<Material, customCropTable> lootTables;
 }

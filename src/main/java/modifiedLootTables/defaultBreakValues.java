@@ -14,6 +14,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+// This class is made with the sole purpose of making it impossible to bypass needing to right click on a crop to
+// get more than 1 crop.
+
 public class defaultBreakValues implements Listener {
     Map<Material, Material> seeds = new HashMap<>() {{
         put(Material.CARROTS, Material.CARROT);
