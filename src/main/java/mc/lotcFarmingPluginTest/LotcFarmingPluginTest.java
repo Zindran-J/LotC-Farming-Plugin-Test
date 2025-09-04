@@ -1,6 +1,7 @@
 package mc.lotcFarmingPluginTest;
 
 import listeners.FarmingFunctions;
+import modifiedLootTables.defaultBreakValues;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -12,7 +13,8 @@ import scheduleHandler.handler;
 // - 1.2. If harvested with an iron/gold tool, drop 2 crops and 1 seed. 3 crops for carrots/potatoes.
 // - 1.3. If harvested with a diamond/netherite tool, drop 3 crops and 1 seed. 4 crops for carrots/potatoes.
 // - 2.0: Adjust how enchantments work on tools, and make it so breaking crops with any tool/weapon does nothing and
-//        removes no durability, unless it's right clicked by the correct tool.
+//        removes no durability, unless it's right clicked by the correct tool. Use BlockDropItemEvent to find when
+//        this happens.
 // - 2.1: Unbreaking 1 should increase durability by 1.5x, and further levels by another 0.5
 //        That means Unbreaking 1 = 1.5x, Unbreaking 2 = 2x, Unbreaking 3 = 2.5x, etc. It's basically (0.5*level + 1)x.
 //        Which can work for plugins that increase enchantment levels, maybe.
@@ -42,6 +44,7 @@ public final class LotcFarmingPluginTest extends JavaPlugin {
         // Start Listener
         getServer().getPluginManager().registerEvents(new FarmingFunctions(), this);
         getServer().getPluginManager().registerEvents(new handler(this), (Plugin) this);
+        getServer().getPluginManager().registerEvents(new defaultBreakValues(), this);
     }
 
     @Override
