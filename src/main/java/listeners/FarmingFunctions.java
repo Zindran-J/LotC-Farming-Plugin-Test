@@ -21,10 +21,11 @@ import scheduleHandler.handler;
 import java.util.HashMap;
 import java.util.Map;
 
-//TODO:
+//NOTE:
 // If CoreProtect is added, Update the "harvestActivity" method to do some extra looking into Cactus, Sugarcane,
-// Pumpkins, and Melons to prevent an infinite glitch. If the block was placed by a player, make it only ever drop 1
-// item/seed, regardless of enchants on the harvesting item.
+// and Pumpkins to prevent an infinite glitch. If the block was placed by a player, make it only ever drop 1
+// item/seed, regardless of enchants on the harvesting item. Melons will never drop enough to be infinite unless
+// higher levels of fortune are added past 3.
 
 public class FarmingFunctions implements Listener {
     Map<Material, Integer> toolWeights = new HashMap<>() {{
