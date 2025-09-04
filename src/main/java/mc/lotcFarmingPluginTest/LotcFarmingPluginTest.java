@@ -24,14 +24,15 @@ import scheduleHandler.handler;
 //        - Fortune 2 = 3 crop 3 seed (4 crop sc)
 //        - Fortune 3 = 4 crop 4 seed (6 crop sc)
 //        Note: for the calculation on seeds just use modulo 2 to get an easy full number.
-// - 2.3 The only exception to these tables I imagine is for Melons. Melons naturally give 4-6 per block, so we'll do 4
-//       naturally, and add half of the current per level, rounded down.
-//       - Fortune 1 ~ 6
-//       - Fortune 2 ~ 9
-//       - Fortune 3 ~ 13
-// - 3.0 Alter the crop break event to make it only ever drop 1 crop/seed if somehow broken by anything other than the
-//       correct tool. Such things that can do this are pistons, crop trampling, darkness, water, lava, explosions,
-//       or a piston moving the supporting block. Mob griefing should be noted to also cause explosions and trampling.
+// - 2.3: For plants that are replantable, automatically reduce the number of "seeds" given by 1 prior to distribution.
+// - 2.4: The only exception to these tables I imagine is for Melons. Melons naturally give 4-6 per block, so we'll do 4
+//        naturally, and add half of the current per level, rounded down.
+//        - Fortune 1 ~ 6
+//        - Fortune 2 ~ 9
+//        - Fortune 3 ~ 13
+// - 3.0: Alter the crop break event to make it only ever drop 1 crop/seed if somehow broken by anything other than the
+//        correct tool. Such things that can do this are pistons, crop trampling, darkness, water, lava, explosions,
+//        or a piston moving the supporting block. Mob griefing should be noted to also cause explosions and trampling.
 
 public final class LotcFarmingPluginTest extends JavaPlugin {
 

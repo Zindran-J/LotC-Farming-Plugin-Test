@@ -2,8 +2,10 @@ package listeners;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Directional;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
@@ -40,7 +42,7 @@ public class FarmingFunctions implements Listener {
     public boolean isCrop (Block block) {
         return switch (block.getType()) {
             case Material.CARROTS, Material.POTATOES, Material.BEETROOTS, Material.WHEAT, Material.NETHER_WART,
-                 Material.COCOA_BEANS, Material.SUGAR_CANE, Material.CACTUS, Material.MELON, Material.PUMPKIN -> true;
+                 Material.COCOA, Material.SUGAR_CANE, Material.CACTUS, Material.MELON, Material.PUMPKIN, Material.RED_MUSHROOM, Material.RED_MUSHROOM_BLOCK, Material.BROWN_MUSHROOM, Material.BROWN_MUSHROOM_BLOCK -> true;
             default -> false;
         };
     }
@@ -52,8 +54,17 @@ public class FarmingFunctions implements Listener {
         boolean isAxe = item.getType().name().endsWith("_AXE");
 
         // Create a new crop block. Default age = 0, so no adjustment needed.
-        BlockData newCrop = clickedBlock.getType().createBlockData();
-        System.out.println("Material is: " + clickedBlock.getType());
+        // If the crop is cocoa, we also need to preserve what way it faces.
+        BlockData newCrop;
+        if (clickedBlock.getType() == Material.COCOA) {
+            // Get current direction, create new crop, copy direction onto new crop.
+            BlockFace currentDirection = ((Directional) clickedBlock.getBlockData()).getFacing();
+            newCrop = clickedBlock.getType().createBlockData();
+            ((Directional) newCrop).setFacing(currentDirection);
+        } else {
+            newCrop = clickedBlock.getType().createBlockData();
+        }
+
         switch (clickedBlock.getType()) {
             // Check block types for valid crops.
             case Material.CARROTS, Material.POTATOES, Material.BEETROOTS, Material.WHEAT, Material.NETHER_WART,
@@ -72,7 +83,7 @@ public class FarmingFunctions implements Listener {
                 }
                 break;
 
-            case Material.SUGAR_CANE, Material.CACTUS:
+            case Material.SUGAR_CANE, Material.CACTUS, Material.RED_MUSHROOM, Material.BROWN_MUSHROOM:
                 if (isHoe) {
                     clickedBlock.breakNaturally();
                 } else {
@@ -80,7 +91,7 @@ public class FarmingFunctions implements Listener {
                     break;
                 }
 
-            case Material.MELON, Material.PUMPKIN:
+            case Material.MELON, Material.PUMPKIN, Material.RED_MUSHROOM_BLOCK, Material.BROWN_MUSHROOM_BLOCK:
                 if (isAxe) {
                     clickedBlock.breakNaturally();
                 } else {
