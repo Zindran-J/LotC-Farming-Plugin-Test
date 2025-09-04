@@ -3,10 +3,12 @@ package modifiedLootTables;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.inventory.ItemStack;
 import scheduleHandler.handler;
 
@@ -14,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-// This class is made with the sole purpose of making it impossible to bypass needing to right click on a crop to
+// This class is made with the sole purpose of making it impossible to bypass needing to right-click on a crop to
 // get more than 1 crop.
 
 public class defaultBreakValues implements Listener {
@@ -48,19 +50,20 @@ public class defaultBreakValues implements Listener {
             Material.WHEAT, Material.NETHER_WART, Material.COCOA, Material.SUGAR_CANE, Material.CACTUS,
             Material.MELON_STEM, Material.PUMPKIN_STEM, Material.RED_MUSHROOM, Material.BROWN_MUSHROOM);
 
+    // This set contains all valid farmland blocks.
     final Set<Material> validFarmland = Set.of(Material.FARMLAND, Material.SOUL_SAND, Material.SAND);
 
     public void dropSingleItem(Block crop) {
+        // Simply put, it drops a single specific seed.
         crop.getWorld().dropItemNaturally(
                 crop.getLocation(),
                 new ItemStack(seeds.get(crop.getType()), 1)
         );
     }
 
-    // Find what block is dropping an item. If it's a crop, set the items dropped to 1 seed.
-    //   This is to prevent things that aim to break the block from exploiting the system.
     @EventHandler
     public void playerCropBreak(BlockBreakEvent playerBreak) {
+        // If a player breaks a crop with anything (a left click), return 1 of the crop's seed.
         Block crop = playerBreak.getBlock();
         if (fullCropSet.contains(crop.getType())) {
             playerBreak.setDropItems(false);
@@ -104,11 +107,44 @@ public class defaultBreakValues implements Listener {
     }
 
     @EventHandler
+    public void explosionCropBreak(EntityExplodeEvent explosionBreak) {
+        // This method makes crops broken by creeper or tnt explosions only drop 1 seed.
+        for (Block block : explosionBreak.blockList()) {
+            if (fullCropSet.contains(block.getType())) {
+                dropSingleItem(block);
+                block.setType(Material.AIR);
+            }
+        }
+    }
+
+    @EventHandler
+    public void netherExplosionCropBreak(BlockExplodeEvent explosionBreak) {
+        // This method makes crops broken by explosions from beds or respawn anchors only drop 1 seed.
+        for (Block block : explosionBreak.blockList()) {
+            if (fullCropSet.contains(block.getType())) {
+                dropSingleItem(block);
+                block.setType(Material.AIR);
+            }
+        }
+    }
+
+    @EventHandler
     public void trampleCropBreak (EntityChangeBlockEvent interaction) {
         // This method makes it so trampling a crop will only ever give the seed back.
         //   Note: Why not just disable trampling entirely...?
-        Block  block = interaction.getBlock();
+
+        Block block = interaction.getBlock();
         if (block.getType() == Material.FARMLAND) {
+            // If the player causing the trampling is in the list of people disabled by crop trampling
+            // cancel the interaction.
+            if (interaction.getEntity() instanceof Player player) {
+                if (handler.existsInFile("croptrample.csv",player.getName())) {
+                    interaction.setCancelled(true);
+                    return;
+                }
+            }
+
+            // Otherwise, trample like normal and return the default drop of 1 seed.
             Block crop = block.getRelative(BlockFace.UP);
             if (fullCropSet.contains(crop.getType())) {
                 dropSingleItem(crop);

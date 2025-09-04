@@ -2,3 +2,14 @@ name: Lotc-Farming-Plugin-Test
 version: '1.0-SNAPSHOT'
 main: mc.lotcFarmingPluginTest.LotcFarmingPluginTest
 api-version: '1.21'
+
+commands:
+  croptrample:
+    description:
+      Toggle a player's ability to trample crops.
+    usage: "/croptrample <user> <true/false>"
+    permission: farmplugin.croptrample
+permissions:
+  farmplugin.croptrample:
+    description: "Enables use of the /croptrample command."
+    default: false

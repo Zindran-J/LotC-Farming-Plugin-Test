@@ -1,5 +1,6 @@
 package mc.lotcFarmingPluginTest;
 
+import commands.croptrample;
 import listeners.FarmingFunctions;
 import lombok.Getter;
 import modifiedLootTables.blocks.*;
@@ -8,11 +9,14 @@ import modifiedLootTables.defaultBreakValues;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.HandlerList;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import scheduleHandler.handler;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 //TODO:
 // - 1.0: Start adjustment on crop drop table.
@@ -76,12 +80,53 @@ public final class LotcFarmingPluginTest extends JavaPlugin {
             put(Material.SUGAR_CANE, getSugarcaneTable());
             put(Material.WHEAT, getWheatTable());
         }};
-        getLogger().info("Loot Tables Initialized!");
+        getLogger().info("Loot Tables Initialized.");
+
+        // Create data folder if none already exist.
+        getLogger().info("Initializing command(s)...");
+        if (!getDataFolder().exists()) {
+            getLogger().info("Creating data folder...");
+            if(!getDataFolder().mkdirs()) {
+                getLogger().warning("Failed to create data folder!");
+            } else {
+                getLogger().info("Data folder created.");
+            }
+        }
+
+        // Create a variable to point to the file.
+        File croptrampleCsv = new File(getDataFolder(), "croptrample.csv");
+
+        // Check to see if the file exists as plugins/Lotc-Farming-Plugin-Test/croptrample.csv.
+        // If it doesn't, create the csv folder.
+        try {
+            if (!croptrampleCsv.exists()) {
+                getLogger().info("Creating csv file...");
+                if (!croptrampleCsv.createNewFile()) {
+                    getLogger().warning("Failed to create csv file!");
+                } else {
+                    getLogger().info("CSV file created.");
+                }
+            } else  {
+                getLogger().info("CSV file already exists.");
+            }
+        } catch (IOException error) {
+            getLogger().severe("Failed to create croptrample.csv file in plugins/Lotc-Farming-Plugin-Test!");
+        }
+
+        // Initialize the command if it's set up properly in the plugin.yml file. If it doesn't log a severe error.
+        if (this.getCommand("croptrample") != null) {
+            Objects.requireNonNull(this.getCommand("croptrample")).setExecutor(new croptrample());
+        } else {
+            getLogger().severe("No croptrample command exists in plugin.yml!");
+        }
+        getLogger().info("Command(s) initialized.");
 
         // Start Listener
+        getLogger().info("Starting listeners...");
         getServer().getPluginManager().registerEvents(new FarmingFunctions(), this);
-        getServer().getPluginManager().registerEvents(new handler(this), (Plugin) this);
+        getServer().getPluginManager().registerEvents(new handler(this), this);
         getServer().getPluginManager().registerEvents(new defaultBreakValues(), this);
+        getLogger().info("Listeners started.");
 
         getLogger().info("Farming Plugin Loaded!");
     }

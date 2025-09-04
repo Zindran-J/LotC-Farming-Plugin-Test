@@ -11,7 +11,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.loot.LootContext;
-
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 public class handler implements Listener {
@@ -70,6 +76,85 @@ public class handler implements Listener {
     }
 
     public static customCropTable getLootTable(Material material) {
+        // Returns a specific crop's loot table.
         return plugin.getLootTable(material);
+    }
+
+    public static boolean fileExists(String path) {
+        // This simply checks to see if a file exists in our data folder.
+        File target = new File(plugin.getDataFolder(), path);
+        return target.exists();
+    }
+
+    public static void writeToFile(String fileName, String inputString) {
+        // This should ONLY be called after verifying that the file exists.
+        File cropTrampleCSV = new File(plugin.getDataFolder(), fileName);
+        try (FileWriter writer = new FileWriter(cropTrampleCSV, true)) {
+            if (cropTrampleCSV.length() == 0) {
+                writer.write(String.join(",",inputString));
+            } else {
+                writer.write(","+inputString);
+            }
+        } catch (IOException error) {
+            plugin.getLogger().severe("Could not write to file: " + fileName);
+        }
+    }
+
+    public static boolean existsInFile(String fileName, String inputString) {
+        // This checks the entire folder to see if the exact string is found within.
+        if (fileExists(fileName)) {
+            File cropTrampleCSV = new File(plugin.getDataFolder(), fileName);
+
+            String allLines;
+            List<String> cleaned;
+            try {
+                // Collect every line and trim whitespace.
+                allLines = Files.readString(cropTrampleCSV.toPath()).trim();
+                cleaned = Arrays.stream(allLines.split(","))
+                        .map(String::trim)
+                        .toList();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            for (String line : cleaned) {
+                if (line.equals(inputString)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static void deleteFromFile(String fileName, String remove) {
+        // This should ONLY be called after verifying that the file exists.
+        // It is also usually only called after another function checks that the
+        //   thing being removed actually exists.
+        File cropTrampleCSV = new File(plugin.getDataFolder(), fileName);
+
+        // This needs to be inside a try-catch block to make readAllLines() happy.
+        String allLines;
+        List<String> updatedLines;
+        String newLines;
+        try {
+            // Collect every line and trim whitespace, then update them
+            //  without keeping the specific name.
+            allLines = Files.readString(cropTrampleCSV.toPath()).trim();
+            updatedLines = Arrays.stream(allLines.split(","))
+                    .map(String::trim)
+                    .filter(user -> !user.equals(remove))
+                    .toList();
+            newLines = String.join(",", updatedLines);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Attempt to empty the current CSV file then fill it with the updated lines.
+        try {
+            Files.writeString(cropTrampleCSV.toPath(), newLines, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            // This should never be reached, unless someone deletes the file mid-function.
+            plugin.getLogger().severe("Someone deleted the CSV file while being modified!");
+            throw new RuntimeException(e);
+        }
     }
 }
