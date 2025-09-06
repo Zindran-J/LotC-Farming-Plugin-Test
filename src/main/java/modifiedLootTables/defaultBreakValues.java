@@ -3,16 +3,20 @@ package modifiedLootTables;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.inventory.ItemStack;
 import scheduleHandler.handler;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -88,20 +92,37 @@ public class defaultBreakValues implements Listener {
 
     @EventHandler
     public void pistonPushCropBreak(BlockPistonExtendEvent physicsBreak) {
-        // This method prevents a piston from pushing the crop itself or its supporting block.
+        // This method makes a piston pushing a crop or its supporting block return only one seed.
         for (Block block : physicsBreak.getBlocks()) {
-            if (fullCropSet.contains(block.getType()) || validFarmland.contains(block.getType())) {
+            if (fullCropSet.contains(block.getType())) {
                 physicsBreak.setCancelled(true);
+                handler.placeBlock(block, Material.AIR.createBlockData());
+                dropSingleItem(block);
+                return;
+            } else if (validFarmland.contains(block.getType())) {
+                Block crop = block.getRelative(BlockFace.UP);
+                if (fullCropSet.contains(crop.getType())) {
+                    dropSingleItem(crop);
+                    crop.setType(Material.AIR);
+                    handler.placeBlock(crop, Material.AIR.createBlockData());
+                }
+                return;
             }
         }
     }
 
     @EventHandler
-    public void pistonPullCropBreak(BlockPistonRetractEvent physicsBreak) {
-        // This method prevents a piston from pulling the crop's supporting block.
+    public void pistonRetractCropBreak(BlockPistonRetractEvent physicsBreak) {
+        // This method makes a piston pulling a crop's supporting block return only one seed.
         for (Block block : physicsBreak.getBlocks()) {
             if (validFarmland.contains(block.getType())) {
-                physicsBreak.setCancelled(true);
+                Block crop = block.getRelative(BlockFace.UP);
+                if (fullCropSet.contains(crop.getType())) {
+                    dropSingleItem(crop);
+                    crop.setType(Material.AIR);
+                    handler.placeBlock(crop, Material.AIR.createBlockData());
+                    return;
+                }
             }
         }
     }
@@ -129,17 +150,17 @@ public class defaultBreakValues implements Listener {
     }
 
     @EventHandler
-    public void trampleCropBreak (EntityChangeBlockEvent interaction) {
+    public void trampleCropBreak (EntityChangeBlockEvent trampleBreak) {
         // This method makes it so trampling a crop will only ever give the seed back.
         //   Note: Why not just disable trampling entirely...?
 
-        Block block = interaction.getBlock();
+        Block block = trampleBreak.getBlock();
         if (block.getType() == Material.FARMLAND) {
             // If the player causing the trampling is in the list of people disabled by crop trampling
             // cancel the interaction.
-            if (interaction.getEntity() instanceof Player player) {
+            if (trampleBreak.getEntity() instanceof Player player) {
                 if (handler.existsInFile("croptrample.csv",player.getName())) {
-                    interaction.setCancelled(true);
+                    trampleBreak.setCancelled(true);
                     return;
                 }
             }
@@ -147,6 +168,19 @@ public class defaultBreakValues implements Listener {
             // Otherwise, trample like normal and return the default drop of 1 seed.
             Block crop = block.getRelative(BlockFace.UP);
             if (fullCropSet.contains(crop.getType())) {
+                dropSingleItem(crop);
+                crop.setType(Material.AIR);
+            }
+        }
+    }
+
+    @EventHandler
+    public void supportCropBreak(BlockPhysicsEvent supportBreak) {
+        Block crop = supportBreak.getBlock();
+        if (fullCropSet.contains(crop.getType())) {
+            Block supportingBlock = crop.getRelative(BlockFace.DOWN);
+            if (supportingBlock.getType() == Material.AIR) {
+                supportBreak.setCancelled(true);
                 dropSingleItem(crop);
                 crop.setType(Material.AIR);
             }
