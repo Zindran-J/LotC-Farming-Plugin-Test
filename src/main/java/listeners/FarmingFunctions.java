@@ -42,6 +42,34 @@ public class FarmingFunctions implements Listener {
         put (Material.NETHERITE_HOE, 3);
         put (Material.NETHERITE_AXE, 3);
     }};
+
+    public enum Weights {
+        //
+        WOODEN (1),
+        STONE (1),
+        IRON (2),
+        GOLDEN (2),
+        DIAMOND (3),
+        NETHERITE (3);
+
+        private final int weight;
+        Weights(final int weight) {
+            this.weight = weight;
+        }
+
+        private int weight() { return weight; }
+
+        public static int getWeight(String itemType) {
+            if (itemType.startsWith("WOODEN")) return WOODEN.weight();
+            if (itemType.startsWith("STONE")) return STONE.weight();
+            if (itemType.startsWith("IRON")) return IRON.weight();
+            if (itemType.startsWith("GOLDEN")) return GOLDEN.weight();
+            if (itemType.startsWith("DIAMOND")) return DIAMOND.weight();
+            if (itemType.startsWith("NETHERITE")) return NETHERITE.weight();
+            return 0;
+        }
+    }
+
     @EventHandler
     public void harvestActivity(PlayerInteractEvent e) {
         // Main method to harvest a farmable block.
@@ -115,12 +143,15 @@ public class FarmingFunctions implements Listener {
         // Get the level of fortune and/or unbreaking on the player's tool.
         // First check to see if the tool is valid, then save its weight.
         // Of course, the weights right now are arbitrary, but this is to show it works.
-        int weights = toolWeights.get(item.getType()) == null ? 0 : toolWeights.get(item.getType());
+        int weights = Weights.getWeight(item.getType().name());
         int unbreakingLevel = item.getEnchantmentLevel(Enchantment.UNBREAKING);
-        int fortune = item.getEnchantmentLevel(Enchantment.FORTUNE) + weights;
+        int fortuneLevel = item.getEnchantmentLevel(Enchantment.FORTUNE);
 
+
+
+        int newLootValue = weights + handler.getBonusDrops(fortuneLevel);
         // Adjust loot tables to reflect the fortune.
-        handler.adjustLootValues(fortune);
+        handler.adjustLootValues(newLootValue);
 
         switch (cropType) {
             // Check block types for valid crops.

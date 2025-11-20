@@ -19,6 +19,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 public class handler implements Listener {
     // This class will only ever be used for methods that require the scheduler to function and intermediary handling.
@@ -41,20 +42,44 @@ public class handler implements Listener {
         }
     }
 
+    public static boolean enchantActivation (double activationChance) {
+        /*
+            We use < here because Math.random() returns a number between 0.0 (inclusive) and 1.0 (exclusive).
+            For a visual example (imagine these are lines from 1.0 to 0.0 with the same rules as above):
+              x is a valid durability damage roll, 0 is when unbreaking stops the damage.
+            No unbreaking: [ x x x x x x x x x x x x ]
+            Unbreaking 1:  [ 0 0 0 0 0 0 x x x x x x ]
+            Unbreaking 2:  [ 0 0 0 0 0 0 0 0 x x x x ]
+            Unbreaking 3:  [ 0 0 0 0 0 0 0 0 0 x x x ]
+            If we used > then we would invert the x's and 0's, effectively making the enchant worse at higher levels.
+        */
+        return Math.random() < activationChance;
+    }
+    public static int getBonusDrops (int fortuneLevel) {
+        /*
+            For the fortune calculation, we will go with the default mechanics, except adjusted for the case of
+            possibly adding higher fortune levels.
+
+            Using the calculation to determine chance for no bonus drops, we use 2/(level + 2)
+            If bonus drops happen, there is an equal chance for any number of drops between 2 and level + 1.
+            - Minecraft Wiki
+        */
+
+        double noBonusChance = (double) 2/(fortuneLevel + 2);
+        if (enchantActivation(noBonusChance)) {
+            // Using the Random utility, I believe we can use .nextInt() to get the exact functionality we want.
+            Random random = new Random();
+            return random.nextInt(fortuneLevel);
+        } else {
+            return 0;
+        }
+    }
+
     public static void damageItem(ItemStack item, int unbreakingModifier) {
         // Store the chance of an item losing durability 100% chance by default.
-        double damageChance = 1.0 / (1.0 + unbreakingModifier);
         if (item.getItemMeta() instanceof Damageable damageable) {
             int currentDurabilityLost = damageable.getDamage();
-            // We use < here because Math.random() returns a number between 0.0 (inclusive) and 1.0 (exclusive).
-            // For a visual example (imagine these are lines from 1.0 to 0.0 with the same rules as above):
-            //     x is a valid durability damage roll, 0 is when unbreaking stops the damage.
-            // No unbreaking: [ x x x x x x x x x x x x ]
-            // Unbreaking 1:  [ 0 0 0 0 0 0 x x x x x x ]
-            // Unbreaking 2:  [ 0 0 0 0 0 0 0 0 x x x x ]
-            // Unbreaking 3:  [ 0 0 0 0 0 0 0 0 0 x x x ]
-            // If we used > then we would invert the x's and 0's, effectively making Unbreaking worse at higher levels.
-            if (Math.random() < damageChance) {
+            if (!enchantActivation(1.0 / (1.0 + unbreakingModifier))) {
                 int newDurabilityLost = currentDurabilityLost + 1;
                 damageable.setDamage(newDurabilityLost);
                 item.setItemMeta(damageable);
