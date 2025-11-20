@@ -4,6 +4,7 @@ import mc.lotcFarmingPluginTest.LotcFarmingPluginTest;
 import modifiedLootTables.customCropTable;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
@@ -75,14 +76,21 @@ public class handler implements Listener {
         }
     }
 
-    public static void damageItem(ItemStack item, int unbreakingModifier) {
+    public static void damageItem(ItemStack item, int unbreakingModifier, Player user) {
         // Store the chance of an item losing durability 100% chance by default.
         if (item.getItemMeta() instanceof Damageable damageable) {
             int currentDurabilityLost = damageable.getDamage();
             if (!enchantActivation(1.0 / (1.0 + unbreakingModifier))) {
                 int newDurabilityLost = currentDurabilityLost + 1;
-                damageable.setDamage(newDurabilityLost);
-                item.setItemMeta(damageable);
+                if (newDurabilityLost == damageable.getMaxDamage()) {
+                    // Item broke!
+                    user.playSound(user.getLocation(), Sound.ENTITY_ITEM_BREAK, 1, 1);
+                    user.getInventory().clear(user.getInventory().getHeldItemSlot());
+
+                } else {
+                    damageable.setDamage(newDurabilityLost);
+                    item.setItemMeta(damageable);
+                }
             }
         }
     }
@@ -97,7 +105,8 @@ public class handler implements Listener {
             int unbreakingLevel) {
         getLootTable(cropType).fillInventory(user.getInventory(), null, playerContext);
         placeBlock(clickedBlock, newCrop);
-        damageItem(item, unbreakingLevel);
+        user.playSound(clickedBlock.getLocation(), Sound.BLOCK_BIG_DRIPLEAF_TILT_UP, 1, (float) (Math.random() + Math.random()));
+        damageItem(item, unbreakingLevel, user);
     }
 
     public static customCropTable getLootTable(Material material) {

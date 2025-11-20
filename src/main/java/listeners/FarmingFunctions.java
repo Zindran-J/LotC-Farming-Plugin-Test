@@ -18,9 +18,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.loot.LootContext;
 import scheduleHandler.handler;
 
-import java.util.HashMap;
-import java.util.Map;
-
 //NOTE:
 // If CoreProtect is added, Update the "harvestActivity" method to do some extra looking into Cactus, Sugarcane,
 // and Pumpkins to prevent an infinite glitch. If the block was placed by a player, make it only ever drop 1
@@ -28,20 +25,6 @@ import java.util.Map;
 // higher levels of fortune are added past 3.
 
 public class FarmingFunctions implements Listener {
-    Map<Material, Integer> toolWeights = new HashMap<>() {{
-        put (Material.WOODEN_HOE, 1);
-        put (Material.WOODEN_AXE, 1);
-        put (Material.STONE_HOE, 1);
-        put (Material.STONE_AXE, 1);
-        put (Material.IRON_HOE, 2);
-        put (Material.IRON_AXE, 2);
-        put (Material.GOLDEN_HOE, 2);
-        put (Material.GOLDEN_AXE, 2);
-        put (Material.DIAMOND_HOE, 3);
-        put (Material.DIAMOND_AXE, 3);
-        put (Material.NETHERITE_HOE, 3);
-        put (Material.NETHERITE_AXE, 3);
-    }};
 
     public enum Weights {
         //
@@ -142,7 +125,7 @@ public class FarmingFunctions implements Listener {
 
         // Get the level of fortune and/or unbreaking on the player's tool.
         // First check to see if the tool is valid, then save its weight.
-        // Of course, the weights right now are arbitrary, but this is to show it works.
+        // Of course, weights are arbitrary for the trial, but this is to show it works.
         int weights = Weights.getWeight(item.getType().name());
         int unbreakingLevel = item.getEnchantmentLevel(Enchantment.UNBREAKING);
         int fortuneLevel = item.getEnchantmentLevel(Enchantment.FORTUNE);
