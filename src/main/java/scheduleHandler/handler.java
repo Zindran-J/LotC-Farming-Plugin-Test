@@ -12,15 +12,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.loot.LootContext;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import org.yaml.snakeyaml.Yaml;
+import org.bukkit.plugin.java.JavaPlugin;
+
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class handler implements Listener {
     // This class will only ever be used for methods that require the scheduler to function and intermediary handling.
@@ -43,18 +41,27 @@ public class handler implements Listener {
         }
     }
 
-    public static boolean enchantActivation (double activationChance) {
+    public static boolean enchantActivation (double activationChance, String enchant) {
         /*
-            We use < here because Math.random() returns a number between 0.0 (inclusive) and 1.0 (exclusive).
+            We use > here because Math.random() returns a number between 0.0 (inclusive) and 1.0 (exclusive).
             For a visual example (imagine these are lines from 1.0 to 0.0 with the same rules as above):
               x is a valid durability damage roll, 0 is when unbreaking stops the damage.
             No unbreaking: [ x x x x x x x x x x x x ]
             Unbreaking 1:  [ 0 0 0 0 0 0 x x x x x x ]
             Unbreaking 2:  [ 0 0 0 0 0 0 0 0 x x x x ]
             Unbreaking 3:  [ 0 0 0 0 0 0 0 0 0 x x x ]
-            If we used > then we would invert the x's and 0's, effectively making the enchant worse at higher levels.
+            If we used < then we would invert the x's and 0's, effectively making the enchant worse at higher levels.
+            We add different cases to allow possible custom enchants to be added in the future.
+
+            Note: This function checks to see if the enchantment activates. If it does, it will return True.
         */
-        return Math.random() < activationChance;
+        switch (enchant) {
+            case "Unbreaking":
+                double rando = Math.random();
+                 return rando > activationChance;
+            case "Fortune": return Math.random() > activationChance;
+            default: return false;
+        }
     }
     public static int getBonusDrops (int fortuneLevel) {
         /*
@@ -67,7 +74,7 @@ public class handler implements Listener {
         */
 
         double noBonusChance = (double) 2/(fortuneLevel + 2);
-        if (enchantActivation(noBonusChance)) {
+        if (enchantActivation(noBonusChance, "Fortune") && fortuneLevel > 0) {
             // Using the Random utility, I believe we can use .nextInt() to get the exact functionality we want.
             Random random = new Random();
             return random.nextInt(fortuneLevel);
@@ -76,20 +83,22 @@ public class handler implements Listener {
         }
     }
 
+    public static int getDurability (ItemStack item) {
+        return item.getType().getMaxDurability() - ((Damageable) Objects.requireNonNull(item.getItemMeta())).getDamage();
+    }
+
     public static void damageItem(ItemStack item, int unbreakingModifier, Player user) {
         // Store the chance of an item losing durability 100% chance by default.
         if (item.getItemMeta() instanceof Damageable damageable) {
             int currentDurabilityLost = damageable.getDamage();
-            if (!enchantActivation(1.0 / (1.0 + unbreakingModifier))) {
+            if (!enchantActivation(((double) 1 / (1 + unbreakingModifier)),"Unbreaking")) {
                 int newDurabilityLost = currentDurabilityLost + 1;
-                if (newDurabilityLost == damageable.getMaxDamage()) {
+                damageable.setDamage(newDurabilityLost);
+                item.setItemMeta(damageable);
+                if (getDurability(item) <= 0) {
                     // Item broke!
                     user.playSound(user.getLocation(), Sound.ENTITY_ITEM_BREAK, 1, 1);
                     user.getInventory().clear(user.getInventory().getHeldItemSlot());
-
-                } else {
-                    damageable.setDamage(newDurabilityLost);
-                    item.setItemMeta(damageable);
                 }
             }
         }
@@ -105,7 +114,7 @@ public class handler implements Listener {
             int unbreakingLevel) {
         getLootTable(cropType).fillInventory(user.getInventory(), null, playerContext);
         placeBlock(clickedBlock, newCrop);
-        user.playSound(clickedBlock.getLocation(), Sound.BLOCK_BIG_DRIPLEAF_TILT_UP, 1, (float) (Math.random() + Math.random()));
+        user.playSound(clickedBlock.getLocation(), Sound.BLOCK_BIG_DRIPLEAF_TILT_UP, 2, (float) (Math.random() + Math.random()));
         damageItem(item, unbreakingLevel, user);
     }
 
@@ -120,75 +129,69 @@ public class handler implements Listener {
         return target.exists();
     }
 
-    public static void writeToFile(String fileName, String inputString) {
-        // This should ONLY be called after verifying that the file exists.
-        File cropTrampleCSV = new File(plugin.getDataFolder(), fileName);
-        try (FileWriter writer = new FileWriter(cropTrampleCSV, true)) {
-            if (cropTrampleCSV.length() == 0) {
-                writer.write(String.join(",",inputString));
-            } else {
-                writer.write(","+inputString);
+    public static List<String> parseYamlFile(String fileName) {
+        Yaml yaml = new Yaml();
+        if (!fileExists(fileName)) {
+            System.out.println("File does not exist! Contact development as soon as possible.");
+            return null;
+        }
+        try (InputStream is = new FileInputStream(new File(plugin.getDataFolder(), fileName))){
+            // If the file exists, this will return the entire file's list contents.
+            Object data = yaml.load(is);
+            if (data instanceof List<?> list) {
+                List<String> cleaned = new ArrayList<>();
+                for (Object o : list) {
+                    cleaned.add(o.toString());
+                }
+                return cleaned;
             }
-        } catch (IOException error) {
-            plugin.getLogger().severe("Could not write to file: " + fileName);
+        } catch (IOException e) {
+            System.out.println("Could not parse file: " + fileName);
+        }
+        return new ArrayList<>();
+    }
+
+    public static void writeToYAML(String fileName, String inputString) {
+        // This should ONLY be called after verifying that the file exists.
+        Yaml yaml = new Yaml();
+        File file = new File(plugin.getDataFolder(), fileName);
+        List<String> data = parseYamlFile(fileName);
+        data.add(inputString);
+        try (FileWriter writer = new FileWriter(file)) {
+            yaml.dump(data, writer);
+        } catch (IOException e) {
+            // This should only happen if someone deleted the file while it was being modified.
+            System.out.println("Could not write to file: " + fileName);
+            e.printStackTrace();
         }
     }
 
-    public static boolean existsInFile(String fileName, String inputString) {
-        // This checks the entire folder to see if the exact string is found within.
-        if (fileExists(fileName)) {
-            File cropTrampleCSV = new File(plugin.getDataFolder(), fileName);
-
-            String allLines;
-            List<String> cleaned;
-            try {
-                // Collect every line and trim whitespace.
-                allLines = Files.readString(cropTrampleCSV.toPath()).trim();
-                cleaned = Arrays.stream(allLines.split(","))
-                        .map(String::trim)
-                        .toList();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            for (String line : cleaned) {
-                if (line.equals(inputString)) {
-                    return true;
-                }
+    public static boolean existsInYAML(String fileName, String inputString) {
+        // This checks the entire file to see if the exact string is found within.
+        // Note: This function assumes that the file exists.
+        List<String> data = parseYamlFile(fileName);
+        for (String s : data) {
+            if (s.equals(inputString)) {
+                return true;
             }
         }
         return false;
     }
 
-    public static void deleteFromFile(String fileName, String remove) {
+    public static void deleteFromYAML(String fileName, String remove) {
         // This should ONLY be called after verifying that the file exists.
         // It is also usually only called after another function checks that the
         //   thing being removed actually exists.
-        File cropTrampleCSV = new File(plugin.getDataFolder(), fileName);
-
-        // This needs to be inside a try-catch block to make readAllLines() happy.
-        String allLines;
-        List<String> updatedLines;
-        String newLines;
-        try {
-            // Collect every line and trim whitespace, then update them
-            //  without keeping the specific name.
-            allLines = Files.readString(cropTrampleCSV.toPath()).trim();
-            updatedLines = Arrays.stream(allLines.split(","))
-                    .map(String::trim)
-                    .filter(user -> !user.equals(remove))
-                    .toList();
-            newLines = String.join(",", updatedLines);
+        Yaml yaml = new Yaml();
+        File file = new File(plugin.getDataFolder(), fileName);
+        List<String> data = parseYamlFile(fileName);
+        data.remove(remove);
+        try (FileWriter writer = new FileWriter(file)) {
+            yaml.dump(data, writer);
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        // Attempt to empty the current CSV file then fill it with the updated lines.
-        try {
-            Files.writeString(cropTrampleCSV.toPath(), newLines, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
-        } catch (IOException e) {
-            // This should never be reached, unless someone deletes the file mid-function.
-            plugin.getLogger().severe("Someone deleted the CSV file while being modified!");
-            throw new RuntimeException(e);
+            // This should only happen if someone deleted the file while it was being modified.
+            System.out.println("Could not write to file: " + fileName);
+            e.printStackTrace();
         }
     }
 }

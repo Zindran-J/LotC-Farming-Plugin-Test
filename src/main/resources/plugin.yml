@@ -6,10 +6,18 @@ api-version: '1.21'
 commands:
   croptrample:
     description:
-      Toggle a player's ability to trample crops.
-    usage: "/croptrample <user> <true/false>"
-    permission: farmplugin.croptrample
+      Toggle your own ability to trample crops.
+    usage: "/croptrample"
+    permission: farmplugin.croptrample.default
+  toggletrample:
+    description:
+      Toggle any player's ability to trample crops
+    usage: "/croptrample <user>"
+    permission: farmplugin.croptrample.admin
 permissions:
-  farmplugin.croptrample:
-    description: "Enables use of the /croptrample command."
+  farmplugin.croptrample.default:
+    description: "Enables use of the croptrample command for yourself."
+    default: false
+  farmplugin.croptrample.admin:
+    description: "Enables use of the croptrample command for admin use."
     default: false

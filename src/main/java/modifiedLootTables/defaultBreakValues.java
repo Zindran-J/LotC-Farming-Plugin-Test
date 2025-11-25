@@ -1,5 +1,6 @@
 package modifiedLootTables;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -155,7 +156,8 @@ public class defaultBreakValues implements Listener {
             // If the player causing the trampling is in the list of people disabled by crop trampling
             // cancel the interaction.
             if (trampleBreak.getEntity() instanceof Player player) {
-                if (handler.existsInFile("croptrample.csv",player.getName())) {
+                java.util.UUID uuid =  player.getUniqueId();
+                if (handler.existsInYAML("croptrample.yaml", uuid.toString())) {
                     trampleBreak.setCancelled(true);
                     return;
                 }

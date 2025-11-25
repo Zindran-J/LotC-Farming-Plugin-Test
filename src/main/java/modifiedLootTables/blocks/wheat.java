@@ -25,7 +25,7 @@ public class wheat implements customCropTable {
     @Override
     public @NotNull Collection<ItemStack> populateLoot(@Nullable Random random, @NotNull LootContext lootContext) {
         Collection<ItemStack> items = new ArrayList<>();
-        items.add(new ItemStack(Material.WHEAT_SEEDS, getLootValue() - 1));
+        items.add(new ItemStack(Material.WHEAT_SEEDS, getLootValue()));
         items.add(new ItemStack(Material.WHEAT, getLootValue()));
         return items;
     }

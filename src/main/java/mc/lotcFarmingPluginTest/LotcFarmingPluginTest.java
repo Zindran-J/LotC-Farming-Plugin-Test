@@ -10,10 +10,13 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.yaml.snakeyaml.Yaml;
 import scheduleHandler.handler;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -70,31 +73,36 @@ public final class LotcFarmingPluginTest extends JavaPlugin {
         }
 
         // Create a variable to point to the file.
-        File croptrampleCsv = new File(getDataFolder(), "croptrample.csv");
+        File croptrampleYAML = new File(getDataFolder(), "croptrample.yaml");
 
         // Check to see if the file exists as plugins/Lotc-Farming-Plugin-Test/croptrample.csv.
         // If it doesn't, create the csv folder.
-        try {
-            if (!croptrampleCsv.exists()) {
-                getLogger().info("Creating csv file...");
-                if (!croptrampleCsv.createNewFile()) {
-                    getLogger().warning("Failed to create csv file!");
-                } else {
-                    getLogger().info("CSV file created.");
-                }
-            } else  {
-                getLogger().info("CSV file already exists.");
+        if (!croptrampleYAML.exists()) {
+            getLogger().info("Creating YAML file...");
+            Yaml yaml = new Yaml();
+            try (FileWriter file = new FileWriter(croptrampleYAML)) {
+                yaml.dump(new ArrayList<>(), file);
+                getLogger().info("YAML file created.");
+            } catch (IOException e) {
+                getLogger().severe("Failed to create croptrample.yaml file in plugins/Lotc-Farming-Plugin-Test!");
             }
-        } catch (IOException error) {
-            getLogger().severe("Failed to create croptrample.csv file in plugins/Lotc-Farming-Plugin-Test!");
+        } else {
+            getLogger().info("YAML file already exists.");
         }
 
-        // Initialize the command if it's set up properly in the plugin.yml file. If it doesn't log a severe error.
+        // Initialize the command(s) if it's set up properly in the plugin.yml file. If it doesn't log a severe error.
         if (this.getCommand("croptrample") != null) {
             Objects.requireNonNull(this.getCommand("croptrample")).setExecutor(new croptrample());
         } else {
             getLogger().severe("No croptrample command exists in plugin.yml!");
         }
+
+        if (this.getCommand("toggletrample") != null) {
+            Objects.requireNonNull(this.getCommand("toggletrample")).setExecutor(new croptrample());
+        } else {
+            getLogger().severe("No toggletrample command exists in plugin.yml!");
+        }
+
         getLogger().info("Command(s) initialized.");
 
         // Start Listener

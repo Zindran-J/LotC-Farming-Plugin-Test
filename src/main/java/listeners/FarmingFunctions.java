@@ -126,13 +126,11 @@ public class FarmingFunctions implements Listener {
         // Get the level of fortune and/or unbreaking on the player's tool.
         // First check to see if the tool is valid, then save its weight.
         // Of course, weights are arbitrary for the trial, but this is to show it works.
-        int weights = Weights.getWeight(item.getType().name());
+        int weight = Weights.getWeight(item.getType().name());
         int unbreakingLevel = item.getEnchantmentLevel(Enchantment.UNBREAKING);
         int fortuneLevel = item.getEnchantmentLevel(Enchantment.FORTUNE);
+        int newLootValue = weight + handler.getBonusDrops(fortuneLevel);
 
-
-
-        int newLootValue = weights + handler.getBonusDrops(fortuneLevel);
         // Adjust loot tables to reflect the fortune.
         handler.adjustLootValues(newLootValue);
 

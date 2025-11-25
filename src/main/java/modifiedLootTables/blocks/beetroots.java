@@ -25,7 +25,7 @@ public class beetroots implements customCropTable {
     @Override
     public @NotNull Collection<ItemStack> populateLoot(@Nullable Random random, @NotNull LootContext lootContext) {
         Collection<ItemStack> items = new ArrayList<>();
-        items.add(new ItemStack(Material.BEETROOT_SEEDS, getLootValue() - 1));
+        items.add(new ItemStack(Material.BEETROOT_SEEDS, getLootValue()));
         items.add(new ItemStack(Material.BEETROOT, getLootValue()));
         return items;
     }
