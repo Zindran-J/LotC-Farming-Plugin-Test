@@ -138,7 +138,7 @@ public class FarmingFunctions implements Listener {
                 // For certain crops like the ones in this case, they must be checked for maturity before harvesting.
                 if (isHoe) {
                     if (isMature) {
-                        handler.harvestBlock(cropType, user, playerContext, clickedBlock, newCrop, item, unbreakingLevel, newLootValue);
+                        handler.harvestBlock(cropType, user, clickedBlock, newCrop, item, unbreakingLevel, newLootValue);
                     } else {
                         user.sendMessage("This crop is not mature yet!");
                     }
@@ -151,7 +151,7 @@ public class FarmingFunctions implements Listener {
                 if (!isHoe) {
                     user.sendMessage("This is the wrong tool to harvest with...");
                 } else {
-                    handler.harvestBlock(cropType, user, playerContext, clickedBlock, setAir, item, unbreakingLevel, newLootValue);
+                    handler.harvestBlock(cropType, user, clickedBlock, setAir, item, unbreakingLevel, newLootValue);
                 }
                 break;
 
@@ -159,7 +159,7 @@ public class FarmingFunctions implements Listener {
                 if (!isAxe) {
                     user.sendMessage("This is the wrong tool to harvest with...");
                 } else {
-                    handler.harvestBlock(cropType, user, playerContext, clickedBlock, setAir, item, unbreakingLevel, newLootValue);
+                    handler.harvestBlock(cropType, user, clickedBlock, setAir, item, unbreakingLevel, newLootValue);
                 }
                 break;
         }

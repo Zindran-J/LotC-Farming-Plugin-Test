@@ -11,12 +11,12 @@ import org.jetbrains.annotations.NotNull;
  */
 public record customCrop(ItemStack seed, ItemStack cropDrop) {
 
-    public void adjustCropValues(int newCropValue) {
+    void adjustCropValues(int newCropValue) {
         seed.setAmount(newCropValue);
         cropDrop.setAmount(newCropValue);
     }
 
-    public void fillInventory(@NotNull LootContext lootContext, @NotNull Inventory inventory, int value) {
+    public void fillInventory(@NotNull Inventory inventory, int value) {
         // Adjust crop values to get the numbers we want
         this.adjustCropValues(value);
 

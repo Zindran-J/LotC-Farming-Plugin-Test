@@ -102,13 +102,12 @@ public class handler implements Listener {
     public static void harvestBlock(
             Material cropType,
             Player user,
-            LootContext playerContext,
             Block clickedBlock,
             BlockData newCrop,
             ItemStack item,
             int unbreakingLevel,
             int dropQuantity) {
-        plugin.getLootTable(cropType).fillInventory(playerContext, user.getInventory(), dropQuantity);
+        plugin.getLootTable(cropType).fillInventory(user.getInventory(), dropQuantity);
         placeBlock(clickedBlock, newCrop);
         user.playSound(clickedBlock.getLocation(), Sound.BLOCK_BIG_DRIPLEAF_TILT_UP, 2, (float) (Math.random() + Math.random()));
         damageItem(item, unbreakingLevel, user);
