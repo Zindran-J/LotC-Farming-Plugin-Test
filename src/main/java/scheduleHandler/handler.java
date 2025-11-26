@@ -1,7 +1,6 @@
 package scheduleHandler;
 
 import mc.lotcFarmingPluginTest.LotcFarmingPluginTest;
-import modifiedLootTables.customCropTable;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -13,11 +12,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.loot.LootContext;
 import org.yaml.snakeyaml.Yaml;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 public class handler implements Listener {
@@ -34,12 +30,6 @@ public class handler implements Listener {
         Bukkit.getScheduler().runTask(plugin, () -> oldBlock.setBlockData(newBlock));
     }
 
-    public static void adjustLootValues(int lootValue) {
-        // Iterate through every single loot table
-        for (Map.Entry<Material, customCropTable> entry : plugin.getLootTables().entrySet()) {
-            entry.getValue().setLootValue(lootValue);
-        }
-    }
 
     public static boolean enchantActivation (double activationChance, String enchant) {
         /*
@@ -77,7 +67,12 @@ public class handler implements Listener {
         if (enchantActivation(noBonusChance, "Fortune") && fortuneLevel > 0) {
             // Using the Random utility, I believe we can use .nextInt() to get the exact functionality we want.
             Random random = new Random();
-            return random.nextInt(fortuneLevel);
+            try {
+                // This try-catch argument is specifically to prevent it from erroring out with Fortune I
+                return random.nextInt(2, fortuneLevel + 1);
+            } catch (IllegalArgumentException e) {
+                return 2;
+            }
         } else {
             return 0;
         }
@@ -111,16 +106,12 @@ public class handler implements Listener {
             Block clickedBlock,
             BlockData newCrop,
             ItemStack item,
-            int unbreakingLevel) {
-        getLootTable(cropType).fillInventory(user.getInventory(), null, playerContext);
+            int unbreakingLevel,
+            int dropQuantity) {
+        plugin.getLootTable(cropType).fillInventory(playerContext, user.getInventory(), dropQuantity);
         placeBlock(clickedBlock, newCrop);
         user.playSound(clickedBlock.getLocation(), Sound.BLOCK_BIG_DRIPLEAF_TILT_UP, 2, (float) (Math.random() + Math.random()));
         damageItem(item, unbreakingLevel, user);
-    }
-
-    public static customCropTable getLootTable(Material material) {
-        // Returns a specific crop's loot table.
-        return plugin.getLootTable(material);
     }
 
     public static boolean fileExists(String path) {

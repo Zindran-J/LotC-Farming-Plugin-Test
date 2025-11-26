@@ -131,9 +131,6 @@ public class FarmingFunctions implements Listener {
         int fortuneLevel = item.getEnchantmentLevel(Enchantment.FORTUNE);
         int newLootValue = weight + handler.getBonusDrops(fortuneLevel);
 
-        // Adjust loot tables to reflect the fortune.
-        handler.adjustLootValues(newLootValue);
-
         switch (cropType) {
             // Check block types for valid crops.
             case Material.CARROTS, Material.POTATOES, Material.BEETROOTS, Material.WHEAT, Material.NETHER_WART,
@@ -141,7 +138,7 @@ public class FarmingFunctions implements Listener {
                 // For certain crops like the ones in this case, they must be checked for maturity before harvesting.
                 if (isHoe) {
                     if (isMature) {
-                        handler.harvestBlock(cropType, user, playerContext, clickedBlock, newCrop, item, unbreakingLevel);
+                        handler.harvestBlock(cropType, user, playerContext, clickedBlock, newCrop, item, unbreakingLevel, newLootValue);
                     } else {
                         user.sendMessage("This crop is not mature yet!");
                     }
@@ -154,7 +151,7 @@ public class FarmingFunctions implements Listener {
                 if (!isHoe) {
                     user.sendMessage("This is the wrong tool to harvest with...");
                 } else {
-                    handler.harvestBlock(cropType, user, playerContext, clickedBlock, setAir, item, unbreakingLevel);
+                    handler.harvestBlock(cropType, user, playerContext, clickedBlock, setAir, item, unbreakingLevel, newLootValue);
                 }
                 break;
 
@@ -162,11 +159,9 @@ public class FarmingFunctions implements Listener {
                 if (!isAxe) {
                     user.sendMessage("This is the wrong tool to harvest with...");
                 } else {
-                    handler.harvestBlock(cropType, user, playerContext, clickedBlock, setAir, item, unbreakingLevel);
+                    handler.harvestBlock(cropType, user, playerContext, clickedBlock, setAir, item, unbreakingLevel, newLootValue);
                 }
                 break;
         }
-        // reset the drop values after looting the block.
-        handler.adjustLootValues(0);
     }
 }

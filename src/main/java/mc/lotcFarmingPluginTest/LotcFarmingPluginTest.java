@@ -2,13 +2,11 @@ package mc.lotcFarmingPluginTest;
 
 import commands.croptrample;
 import listeners.FarmingFunctions;
-import lombok.Getter;
-import modifiedLootTables.blocks.*;
-import modifiedLootTables.customCropTable;
+import modifiedLootTables.customCrop;
 import modifiedLootTables.defaultBreakValues;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.event.HandlerList;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.yaml.snakeyaml.Yaml;
 import scheduleHandler.handler;
@@ -25,42 +23,6 @@ public final class LotcFarmingPluginTest extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        getLogger().info("Loading Farming Plugin...");
-
-        // Initialize Tables
-        getLogger().info("Initializing Loot Tables...");
-        this.beetrootTable = new beetroots(new NamespacedKey(this, "beetroot_drops"));
-        this.brownMushroomTable = new brownMushroom(new NamespacedKey(this, "brown_mushroom_drops"));
-        this.brownMushroomBlockTable = new brownMushroomBlock(new NamespacedKey(this, "brown_mushroom_block_drops"));
-        this.redMushroomTable = new redMushroom(new NamespacedKey(this, "red_mushroom_drops"));
-        this.redMushroomBlockTable = new redMushroomBlock(new NamespacedKey(this, "red_mushroom_block_drops"));
-        this.cactusTable = new cactus(new NamespacedKey(this, "cactus_drops"));
-        this.carrotTable = new carrots(new NamespacedKey(this, "carrot_drops"));
-        this.cocoaTable = new cocoa(new NamespacedKey(this, "cocoa_drops"));
-        this.melonTable = new melon(new NamespacedKey(this, "melon_drops"));
-        this.netherwartTable = new netherwart(new NamespacedKey(this, "netherwart_drops"));
-        this.potatoTable = new potatoes(new NamespacedKey(this, "potato_drops"));
-        this.pumpkinTable = new pumpkin(new NamespacedKey(this, "pumpkin_drops"));
-        this.sugarcaneTable = new sugarcane(new NamespacedKey(this, "sugarcane_drops"));
-        this.wheatTable = new wheat(new NamespacedKey(this, "wheat_drops"));
-        this.lootTables = new HashMap<>() {{
-            put(Material.BEETROOTS, getBeetrootTable());
-            put(Material.BROWN_MUSHROOM, getBrownMushroomTable());
-            put(Material.BROWN_MUSHROOM_BLOCK, getBrownMushroomBlockTable());
-            put(Material.RED_MUSHROOM, getRedMushroomTable());
-            put(Material.RED_MUSHROOM_BLOCK, getRedMushroomBlockTable());
-            put(Material.CACTUS, getCactusTable());
-            put(Material.CARROTS, getCarrotTable());
-            put(Material.COCOA, getCocoaTable());
-            put(Material.MELON, getMelonTable());
-            put(Material.NETHER_WART, getNetherwartTable());
-            put(Material.POTATOES, getPotatoTable());
-            put(Material.PUMPKIN, getPumpkinTable());
-            put(Material.SUGAR_CANE, getSugarcaneTable());
-            put(Material.WHEAT, getWheatTable());
-        }};
-        getLogger().info("Loot Tables Initialized.");
-
         // Create data folder if none already exist.
         getLogger().info("Initializing command(s)...");
         if (!getDataFolder().exists()) {
@@ -122,45 +84,28 @@ public final class LotcFarmingPluginTest extends JavaPlugin {
         HandlerList.unregisterAll(this);
     }
 
-    public customCropTable getLootTable (Material material) {
-        return lootTables.get(material);
+    private final Map<Material, customCrop> crops = new HashMap<>() {{
+        // This map is used for all our crop loot tables.
+        // The Key is the block broken (ex: Material.CARROTS)
+        // The drops are from the "customCrop" class.
+        // - Seed, Item Drop
+        put(Material.BEETROOTS, new customCrop(new ItemStack(Material.BEETROOT, 1), new ItemStack(Material.BEETROOT_SEEDS, 1)));
+        put(Material.BROWN_MUSHROOM, new customCrop(new ItemStack(Material.BROWN_MUSHROOM, 1), new ItemStack(Material.BROWN_MUSHROOM, 1)));
+        put(Material.BROWN_MUSHROOM_BLOCK, new customCrop(new ItemStack(Material.BROWN_MUSHROOM, 1), new ItemStack(Material.BROWN_MUSHROOM, 1)));
+        put(Material.CACTUS, new customCrop(new ItemStack(Material.CACTUS, 1), new ItemStack(Material.CACTUS, 1)));
+        put(Material.CARROTS, new customCrop(new ItemStack(Material.CARROT, 1), new ItemStack(Material.CARROT, 1)));
+        put(Material.COCOA, new customCrop(new ItemStack(Material.COCOA_BEANS, 1), new ItemStack(Material.COCOA_BEANS, 1)));
+        put(Material.MELON, new customCrop(new ItemStack(Material.MELON_SEEDS, 1), new ItemStack(Material.MELON_SLICE, 1)));
+        put(Material.NETHER_WART, new customCrop(new ItemStack(Material.NETHER_WART, 1), new ItemStack(Material.NETHER_WART, 1)));
+        put(Material.POTATOES, new customCrop(new ItemStack(Material.POTATO, 1), new ItemStack(Material.POTATO, 1)));
+        put(Material.PUMPKIN, new customCrop(new ItemStack(Material.PUMPKIN_SEEDS, 1), new ItemStack(Material.PUMPKIN, 1)));
+        put(Material.RED_MUSHROOM, new customCrop(new ItemStack(Material.RED_MUSHROOM, 1), new ItemStack(Material.RED_MUSHROOM, 1)));
+        put(Material.RED_MUSHROOM_BLOCK, new customCrop(new ItemStack(Material.RED_MUSHROOM, 1), new ItemStack(Material.RED_MUSHROOM, 1)));
+        put(Material.SUGAR_CANE, new customCrop(new ItemStack(Material.SUGAR_CANE, 1), new ItemStack(Material.SUGAR_CANE, 1)));
+        put(Material.WHEAT, new customCrop(new ItemStack(Material.WHEAT_SEEDS, 1), new ItemStack(Material.WHEAT, 1)));
+    }};
+
+    public customCrop getLootTable (Material material) {
+        return crops.get(material);
     }
-
-
-    // The way this should work is:
-    // 1. ####Table is initialized.
-    // 2. The Getter function is stored as a value inside a map with a material key.
-    // 3.0 To access ####Table specifically, we call getLootTable with the material key.
-    // 3.1 With that key, we call lootTables and pass the key which gives us the Getter function.
-    // 3.2 That Getter function automatically returns the requested table.
-    @Getter
-    private beetroots beetrootTable;
-    @Getter
-    private brownMushroom brownMushroomTable;
-    @Getter
-    private brownMushroomBlock brownMushroomBlockTable;
-    @Getter
-    private redMushroom redMushroomTable;
-    @Getter
-    private redMushroomBlock redMushroomBlockTable;
-    @Getter
-    private cactus cactusTable;
-    @Getter
-    private carrots carrotTable;
-    @Getter
-    private cocoa cocoaTable;
-    @Getter
-    private melon melonTable;
-    @Getter
-    private netherwart netherwartTable;
-    @Getter
-    private potatoes potatoTable;
-    @Getter
-    private pumpkin pumpkinTable;
-    @Getter
-    private sugarcane sugarcaneTable;
-    @Getter
-    private wheat wheatTable;
-    @Getter
-    private Map<Material, customCropTable> lootTables;
 }
